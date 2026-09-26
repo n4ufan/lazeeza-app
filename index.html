@@ -14,6 +14,10 @@
 <meta name="theme-color" content="#f6f4ef">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
+<!-- speed: open the connections to Google while this page is still starting -->
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com">
+<link rel="preconnect" href="https://ssl.gstatic.com">
 <style>
   :root { --bg:#f6f4ef; --ink:#3b2a12; --mute:#7a6a50; --gold:#a8742a; }
   * { box-sizing:border-box; }
@@ -33,7 +37,11 @@
   /* the app itself, full screen: clear of the notch at the top, but running to the very bottom
      edge — the app pads its own bottom menu by the home-bar height (passed in as &sb=) */
   #app { position:fixed; left:0; right:0; top:env(safe-area-inset-top); bottom:0;
-         width:100%; height:calc(100% - env(safe-area-inset-top)); border:0; background:var(--bg); }
+         width:100%; height:calc(100% - env(safe-area-inset-top)); border:0; background:transparent; }
+  /* the logo shows the instant the icon is tapped, until the app paints over it */
+  #splash { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
+  #splash img { width:130px; height:130px; animation:breathe 1.6s ease-in-out infinite; }
+  @keyframes breathe { 50% { opacity:.55; } }
   #sbProbe { position:fixed; left:0; bottom:0; width:1px; height:env(safe-area-inset-bottom); visibility:hidden; }
   [hidden] { display:none !important; }
 </style>
@@ -71,6 +79,7 @@
   <h1>Lazeeza</h1>
   <p>This link is incomplete. Open the Lazeeza app and use <b>Home Screen icon</b> on its Home page.</p>
 </main>
+<div id="splash" hidden><img src="logo.png" alt=""></div>
 <iframe id="app" hidden title="Lazeeza" allow="clipboard-write; web-share; camera"></iframe>
 <script>
   const APP = 'https://script.google.com/macros/s/AKfycby1KFHqU927w57hSLo3rhbmxQbiFWg9FfTJ09FiHU7wn_upXR0DbRiutCCGhRQ6_0ZR/exec';
@@ -93,6 +102,7 @@
     document.querySelectorAll('main').forEach(m => m.hidden = true);
     const pass = store.get(), f = document.getElementById('app');
     f.src = APP + '?k=' + encodeURIComponent(key) + (/^[a-f0-9]{64}$/.test(pass) ? '&d=' + pass : '') + '&sb=' + homeBar();
+    document.getElementById('splash').hidden = false;
     f.hidden = false;
   }
   if (!/^[A-Za-z0-9_-]{16,}$/.test(key)) {
