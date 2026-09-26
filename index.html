@@ -4,79 +4,98 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Lazeeza</title>
-<!-- What the iPhone uses when this page is added to the Home Screen -->
+<!-- What the iPhone uses when this page is added to the Home Screen: our icon, full screen -->
 <meta name="apple-mobile-web-app-title" content="Lazeeza">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<meta name="theme-color" content="#f8f8e4">
+<meta name="theme-color" content="#f6f4ef">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <style>
-  :root { --bg:#f8f8e4; --ink:#3b2a12; --mute:#7a6a50; --gold:#a8742a; }
+  :root { --bg:#f6f4ef; --ink:#3b2a12; --mute:#7a6a50; --gold:#a8742a; }
   * { box-sizing:border-box; }
-  body { margin:0; min-height:100vh; background:var(--bg); color:var(--ink);
-         font:16px/1.45 -apple-system, "Segoe UI", Roboto, sans-serif; display:flex; align-items:center; justify-content:center; }
-  main { width:100%; max-width:420px; padding:28px 22px; text-align:center; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--ink);
+               font:16px/1.45 -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { min-height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center;
+         max-width:420px; margin:0 auto; padding:28px 22px; text-align:center; }
   img.logo { width:150px; height:150px; }
   h1 { margin:10px 0 4px; font-size:24px; }
   p { color:var(--mute); margin:6px 0; }
   ol { text-align:left; margin:18px 0; padding-left:22px; }
   li { margin:10px 0; }
   b { color:var(--ink); }
-  .btn { display:block; margin-top:18px; padding:14px; border-radius:12px; background:var(--gold); color:#fff; font-weight:700; text-decoration:none; }
+  .btn { display:block; width:100%; margin-top:18px; padding:14px; border:0; border-radius:12px; background:var(--gold);
+         color:#fff; font:700 16px -apple-system, "Segoe UI", Roboto, sans-serif; }
   .note { font-size:13px; margin-top:16px; }
+  /* the app itself, full screen, kept clear of the notch and the home bar */
+  #app { position:fixed; left:0; right:0; top:env(safe-area-inset-top); bottom:env(safe-area-inset-bottom);
+         width:100%; height:calc(100% - env(safe-area-inset-top) - env(safe-area-inset-bottom)); border:0; background:var(--bg); }
   [hidden] { display:none !important; }
 </style>
 </head>
 <body>
 <!--
-  Lazeeza launcher. The Lazeeza app is a Google Apps Script web app, and Google owns
-  that page, so an iPhone can't give it our icon. This page exists only to carry the
-  icon: added to the Home Screen, it opens and immediately forwards to the app.
+  Lazeeza launcher. The Lazeeza app is a Google Apps Script web app; Google owns that
+  page, so an iPhone can't give it our icon or open it without Safari's bars. This page
+  carries the icon and shows the app full screen INSIDE itself (the app allows that:
+  doGet sets XFrameOptionsMode.ALLOWALL; access is key + PIN, not Google sign-in).
 
-  The app's secret key is NOT in this page. It travels after the "#" in the
-  bookmarked link (#k=...), and browsers never send that part to any server, so it
-  lives only in the phone's bookmark. Without it this page does nothing.
+  Secrets: the app's key rides after "#" in the bookmarked link (#k=...), which
+  browsers never send to a server — it lives only in the phone's bookmark. The phone's
+  device pass (issued by the app after the PIN) is handed up by the app with
+  postMessage and kept in THIS page's storage, then passed back in on every launch,
+  so the PIN is asked once per phone. Neither is ever in this repo.
 
-  ?setup = the app's own "Add to Home Screen" button opened this page: show the steps
-  and remove "?setup" from the address (history.replaceState), so the bookmark iOS
-  saves is the plain link that forwards straight into the app.
+  ?setup = opened from the app's "Home Screen icon" button: show the steps and drop
+  "?setup" from the address (replaceState) so the saved icon opens the app directly.
 -->
 <main id="setup" hidden>
   <img class="logo" src="logo.png" alt="">
   <h1>Put Lazeeza on your Home Screen</h1>
   <ol>
-    <li>Tap the <b>Share</b> button <span aria-hidden="true">⬆︎</span> (bottom of Safari, or ⋯ first).</li>
+    <li>Tap the <b>Share</b> button (bottom of Safari — tap <b>⋯</b> first if you don’t see it).</li>
     <li>Tap <b>Add to Home Screen</b>.</li>
-    <li>If you see <b>Open as Web App</b>, switch it <b>off</b>. It opens in Safari, where you're already signed in.</li>
+    <li>Keep <b>Open as Web App</b> switched <b>ON</b>.</li>
     <li>Tap <b>Add</b>. Then delete the old Lazeeza icon.</li>
   </ol>
-  <a class="btn" id="open" href="#">Open Lazeeza now</a>
-  <p class="note">Keep this icon to yourself. It holds your app’s private key.</p>
-</main>
-<main id="going" hidden>
-  <img class="logo" src="logo.png" alt="">
-  <p>Opening Lazeeza…</p>
+  <button class="btn" id="open">Open Lazeeza now</button>
+  <p class="note">Keep this icon to yourself — it holds your app’s private key.</p>
 </main>
 <main id="nokey" hidden>
   <img class="logo" src="logo.png" alt="">
   <h1>Lazeeza</h1>
-  <p>This link is incomplete. Open the Lazeeza app and use <b>Add to Home Screen</b> on its Home page.</p>
+  <p>This link is incomplete. Open the Lazeeza app and use <b>Home Screen icon</b> on its Home page.</p>
 </main>
+<iframe id="app" hidden title="Lazeeza" allow="clipboard-write; web-share; camera"></iframe>
 <script>
   const APP = 'https://script.google.com/macros/s/AKfycby1KFHqU927w57hSLo3rhbmxQbiFWg9FfTJ09FiHU7wn_upXR0DbRiutCCGhRQ6_0ZR/exec';
   const key = new URLSearchParams(location.hash.slice(1)).get('k') || '';
-  const target = APP + '?k=' + encodeURIComponent(key);
+  const store = { get: () => { try { return localStorage.getItem('lzDev') || ''; } catch (e) { return ''; } },
+                  set: v => { try { localStorage.setItem('lzDev', v); } catch (e) {} } };
+  // The app (inside Google's frames) sends this phone's device pass up after the PIN.
+  window.addEventListener('message', e => {
+    if (!/^https:\/\/([a-z0-9-]+\.)*(googleusercontent\.com|google\.com)$/.test(e.origin)) return;
+    const pass = e.data && e.data.lzDev;
+    if (/^[a-f0-9]{64}$/.test(pass || '')) store.set(pass);
+  });
   const show = id => document.getElementById(id).hidden = false;
+  function openApp() {
+    document.querySelectorAll('main').forEach(m => m.hidden = true);
+    const pass = store.get(), f = document.getElementById('app');
+    f.src = APP + '?k=' + encodeURIComponent(key) + (/^[a-f0-9]{64}$/.test(pass) ? '&d=' + pass : '');
+    f.hidden = false;
+  }
   if (!/^[A-Za-z0-9_-]{16,}$/.test(key)) {
     show('nokey');
   } else if (new URLSearchParams(location.search).has('setup') && !navigator.standalone) {
     history.replaceState(null, '', location.pathname + location.hash);
-    document.getElementById('open').href = target;
+    document.getElementById('open').onclick = openApp;
     show('setup');
   } else {
-    show('going');
-    location.replace(target);
+    openApp();
   }
 </script>
 </body>
