@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lazeeza</title>
+<!-- What the iPhone uses when this page is added to the Home Screen -->
+<meta name="apple-mobile-web-app-title" content="Lazeeza">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<meta name="theme-color" content="#f8f8e4">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<style>
+  :root { --bg:#f8f8e4; --ink:#3b2a12; --mute:#7a6a50; --gold:#a8742a; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; background:var(--bg); color:var(--ink);
+         font:16px/1.45 -apple-system, "Segoe UI", Roboto, sans-serif; display:flex; align-items:center; justify-content:center; }
+  main { width:100%; max-width:420px; padding:28px 22px; text-align:center; }
+  img.logo { width:150px; height:150px; }
+  h1 { margin:10px 0 4px; font-size:24px; }
+  p { color:var(--mute); margin:6px 0; }
+  ol { text-align:left; margin:18px 0; padding-left:22px; }
+  li { margin:10px 0; }
+  b { color:var(--ink); }
+  .btn { display:block; margin-top:18px; padding:14px; border-radius:12px; background:var(--gold); color:#fff; font-weight:700; text-decoration:none; }
+  .note { font-size:13px; margin-top:16px; }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<!--
+  Lazeeza launcher. The Lazeeza app is a Google Apps Script web app, and Google owns
+  that page, so an iPhone can't give it our icon. This page exists only to carry the
+  icon: added to the Home Screen, it opens and immediately forwards to the app.
+
+  The app's secret key is NOT in this page. It travels after the "#" in the
+  bookmarked link (#k=...), and browsers never send that part to any server, so it
+  lives only in the phone's bookmark. Without it this page does nothing.
+
+  ?setup = the app's own "Add to Home Screen" button opened this page: show the steps
+  and remove "?setup" from the address (history.replaceState), so the bookmark iOS
+  saves is the plain link that forwards straight into the app.
+-->
+<main id="setup" hidden>
+  <img class="logo" src="logo.png" alt="">
+  <h1>Put Lazeeza on your Home Screen</h1>
+  <ol>
+    <li>Tap the <b>Share</b> button <span aria-hidden="true">⬆︎</span> (bottom of Safari, or ⋯ first).</li>
+    <li>Tap <b>Add to Home Screen</b>.</li>
+    <li>If you see <b>Open as Web App</b>, switch it <b>off</b>. It opens in Safari, where you're already signed in.</li>
+    <li>Tap <b>Add</b>. Then delete the old Lazeeza icon.</li>
+  </ol>
+  <a class="btn" id="open" href="#">Open Lazeeza now</a>
+  <p class="note">Keep this icon to yourself. It holds your app’s private key.</p>
+</main>
+<main id="going" hidden>
+  <img class="logo" src="logo.png" alt="">
+  <p>Opening Lazeeza…</p>
+</main>
+<main id="nokey" hidden>
+  <img class="logo" src="logo.png" alt="">
+  <h1>Lazeeza</h1>
+  <p>This link is incomplete. Open the Lazeeza app and use <b>Add to Home Screen</b> on its Home page.</p>
+</main>
+<script>
+  const APP = 'https://script.google.com/macros/s/AKfycby1KFHqU927w57hSLo3rhbmxQbiFWg9FfTJ09FiHU7wn_upXR0DbRiutCCGhRQ6_0ZR/exec';
+  const key = new URLSearchParams(location.hash.slice(1)).get('k') || '';
+  const target = APP + '?k=' + encodeURIComponent(key);
+  const show = id => document.getElementById(id).hidden = false;
+  if (!/^[A-Za-z0-9_-]{16,}$/.test(key)) {
+    show('nokey');
+  } else if (new URLSearchParams(location.search).has('setup') && !navigator.standalone) {
+    history.replaceState(null, '', location.pathname + location.hash);
+    document.getElementById('open').href = target;
+    show('setup');
+  } else {
+    show('going');
+    location.replace(target);
+  }
+</script>
+</body>
+</html>
