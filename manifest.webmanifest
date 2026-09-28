@@ -1,0 +1,17 @@
+{
+  "id": "/lazeeza-app/",
+  "name": "Lazeeza",
+  "short_name": "Lazeeza",
+  "description": "Lazeeza sales, orders, expenses and shops",
+  "start_url": "/lazeeza-app/",
+  "scope": "/lazeeza-app/",
+  "display": "standalone",
+  "background_color": "#f6f4ef",
+  "theme_color": "#f6f4ef",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

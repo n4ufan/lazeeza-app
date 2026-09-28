@@ -10,6 +10,18 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script>
+  // Android (and other non-Apple browsers): a real app install from manifest.webmanifest. Its start page
+  // can't hold the key (this repo is public), so the key is kept in this page's storage the first time
+  // the #k= link is opened, and the installed app reads it from there (Android's installed app shares
+  // Chrome's storage). NOT for iPhone/iPad/Mac: iOS would open the manifest's start page too, and a Home
+  // Screen app there gets its own empty storage = no key; iPhones keep the #k= bookmark as before.
+  const APPLE = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
+  const ANDROID = /Android/i.test(navigator.userAgent);
+  if (!APPLE) { const l = document.createElement('link'); l.rel = 'manifest'; l.href = 'manifest.webmanifest'; document.head.append(l); }
+  // Android: the keyboard shrinks the app instead of covering it (so a form's boxes and Save stay above it)
+  if (ANDROID) { const v = document.querySelector('meta[name=viewport]'); v.content += ', interactive-widget=resizes-content'; document.documentElement.classList.add('android'); }
+</script>
 <link rel="icon" type="image/png" href="icon-192.png">
 <meta name="theme-color" content="#f6f4ef">
 <meta name="robots" content="noindex, nofollow">
@@ -43,6 +55,9 @@
   #splash img { width:130px; height:130px; animation:breathe 1.6s ease-in-out infinite; }
   @keyframes breathe { 50% { opacity:.55; } }
   #sbProbe { position:fixed; left:0; bottom:0; width:1px; height:env(safe-area-inset-bottom); visibility:hidden; }
+  .btn.ghost { background:#fff; color:var(--ink); border:1px solid #e6e1d8; }
+  /* Android: no pull-down-to-reload over the app (it would restart it) */
+  html.android, html.android body { overscroll-behavior:none; }
   [hidden] { display:none !important; }
 </style>
 </head>
@@ -61,6 +76,8 @@
 
   ?setup = opened from the app's "Home Screen icon" button: show the steps and drop
   "?setup" from the address (replaceState) so the saved icon opens the app directly.
+  iPhone: Share ▸ Add to Home Screen (the #k= link is the icon). Android: Install (manifest
+  + Chrome's install offer); the installed app opens without #k= and uses the kept key.
 -->
 <main id="setup" hidden>
   <img class="logo" src="logo.png" alt="">
@@ -74,18 +91,43 @@
   <button class="btn" id="open">Open Lazeeza now</button>
   <p class="note">Keep this icon to yourself — it holds your app’s private key.</p>
 </main>
+<main id="setupA" hidden>
+  <img class="logo" src="logo.png" alt="">
+  <h1>Install Lazeeza</h1>
+  <p>Its own icon, full screen, no Google bar at the top.</p>
+  <button class="btn" id="installBtn" hidden>Install Lazeeza</button>
+  <ol id="steps">
+    <li>Tap <b>⋮</b> at the top right of Chrome.</li>
+    <li>Tap <b>Install app</b> — or <b>Add to Home screen</b> ▸ <b>Install</b>.</li>
+    <li>Open Lazeeza from your Home screen. Then delete any old Lazeeza icon or bookmark.</li>
+  </ol>
+  <p class="note">Samsung Internet: tap <b>☰</b> ▸ <b>Add page to</b> ▸ <b>Home screen</b>.</p>
+  <p id="done" hidden><b>Installed.</b> Open Lazeeza from your Home screen.</p>
+  <button class="btn ghost" id="openA">Open Lazeeza here</button>
+  <p class="note">Keep this to yourself — it holds your app’s private key.</p>
+</main>
 <main id="nokey" hidden>
   <img class="logo" src="logo.png" alt="">
   <h1>Lazeeza</h1>
-  <p>This link is incomplete. Open the Lazeeza app and use <b>Home Screen icon</b> on its Home page.</p>
+  <p>This phone doesn’t have its Lazeeza link yet. Open the Lazeeza link you were sent once, then open Lazeeza again.</p>
 </main>
 <div id="splash" hidden><img src="logo.png" alt=""></div>
 <iframe id="app" hidden title="Lazeeza" allow="clipboard-write; web-share; camera"></iframe>
 <script>
   const APP = 'https://script.google.com/macros/s/AKfycby1KFHqU927w57hSLo3rhbmxQbiFWg9FfTJ09FiHU7wn_upXR0DbRiutCCGhRQ6_0ZR/exec';
-  const key = new URLSearchParams(location.hash.slice(1)).get('k') || '';
   const store = { get: () => { try { return localStorage.getItem('lzDev') || ''; } catch (e) { return ''; } },
                   set: v => { try { localStorage.setItem('lzDev', v); } catch (e) {} } };
+  // the key: from the #k= link (kept for the installed Android app, which opens without it), else the kept one
+  const okKey = k => /^[A-Za-z0-9_-]{16,}$/.test(k || '');
+  const linkKey = new URLSearchParams(location.hash.slice(1)).get('k') || '';
+  if (okKey(linkKey)) { try { localStorage.setItem('lzKey', linkKey); } catch (e) {} }
+  const key = okKey(linkKey) ? linkKey : (() => { try { return localStorage.getItem('lzKey') || ''; } catch (e) { return ''; } })();
+  const installed = () => navigator.standalone || matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches;
+  // Chrome's own install offer: keep it for our button instead of its pop-up bar over the app
+  let offer = null;
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); offer = e; document.getElementById('installBtn').hidden = false; });
+  window.addEventListener('appinstalled', () => { offer = null; document.getElementById('installBtn').hidden = true;
+    document.getElementById('steps').hidden = true; document.getElementById('done').hidden = false; });
   // The app (inside Google's frames) sends this phone's device pass up after the PIN.
   window.addEventListener('message', e => {
     if (!/^https:\/\/([a-z0-9-]+\.)*(googleusercontent\.com|google\.com)$/.test(e.origin)) return;
@@ -105,12 +147,21 @@
     document.getElementById('splash').hidden = false;
     f.hidden = false;
   }
-  if (!/^[A-Za-z0-9_-]{16,}$/.test(key)) {
+  if (!okKey(key)) {
     show('nokey');
-  } else if (new URLSearchParams(location.search).has('setup') && !navigator.standalone) {
+  } else if (new URLSearchParams(location.search).has('setup') && !installed()) {
     history.replaceState(null, '', location.pathname + location.hash);
-    document.getElementById('open').onclick = openApp;
-    show('setup');
+    if (APPLE) { document.getElementById('open').onclick = openApp; show('setup'); }
+    else {
+      document.getElementById('installBtn').onclick = async () => {
+        if (!offer) return;
+        offer.prompt(); const r = await offer.userChoice.catch(() => ({}));
+        offer = null; document.getElementById('installBtn').hidden = true;
+        if (r.outcome === 'accepted') { document.getElementById('steps').hidden = true; document.getElementById('done').hidden = false; }
+      };
+      document.getElementById('openA').onclick = openApp;
+      show('setupA');
+    }
   } else {
     openApp();
   }
