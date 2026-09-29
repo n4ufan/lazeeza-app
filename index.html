@@ -118,8 +118,9 @@
   const store = { get: () => { try { return localStorage.getItem('lzDev') || ''; } catch (e) { return ''; } },
                   set: v => { try { localStorage.setItem('lzDev', v); } catch (e) {} } };
   // the key: from the #k= link (kept for the installed Android app, which opens without it), else the kept one
-  const okKey = k => /^[A-Za-z0-9_-]{16,}$/.test(k || '');
-  const linkKey = new URLSearchParams(location.hash.slice(1)).get('k') || '';
+  // (#k=<long key> from older links and icons, or the 8-character code from lazeeza.nauflow.com/#code)
+  const okKey = k => /^[A-Za-z0-9_-]{8,}$/.test(k || '');
+  const hash = location.hash.slice(1), linkKey = okKey(hash) ? hash : new URLSearchParams(hash).get('k') || '';
   if (okKey(linkKey)) { try { localStorage.setItem('lzKey', linkKey); } catch (e) {} }
   const key = okKey(linkKey) ? linkKey : (() => { try { return localStorage.getItem('lzKey') || ''; } catch (e) { return ''; } })();
   const installed = () => navigator.standalone || matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches;
