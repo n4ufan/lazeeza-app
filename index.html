@@ -148,13 +148,13 @@
     document.getElementById('splash').hidden = false;
     f.hidden = false;
   }
-  // 2026-10-14: the app moved to lazeeza-app.nauflow.com (the Node version on Hostinger, same sheets). Old Home Screen icons
+  // 2026-10-14: the app moved to Hostinger (the Node version, same sheets), served at lazeeza.nauflow.com. Old Home Screen icons
   // and links land here: forwarded there with the code this phone kept (it opens with the same PIN, asked once).
   // Going back to the Apps Script version = revert this commit (the setup / openApp code above is still the old one).
   // Its kept pass goes along (&d=): the iPhone forgets the new site's storage when it's opened from this icon, so without it
   // the PIN was asked at every open. The new site has the old app's phones (copied at the switch), so it still works there.
   const pass0 = store.get();
-  location.replace('https://lazeeza-app.nauflow.com/' + (okKey(key) ? '#k=' + encodeURIComponent(key) + (/^[a-f0-9]{64}$/.test(pass0) ? '&d=' + pass0 : '') : ''));
+  location.replace('https://lazeeza.nauflow.com/' + (okKey(key) ? '#k=' + encodeURIComponent(key) + (/^[a-f0-9]{64}$/.test(pass0) ? '&d=' + pass0 : '') : ''));
 </script>
 </body>
 </html>
