@@ -148,24 +148,10 @@
     document.getElementById('splash').hidden = false;
     f.hidden = false;
   }
-  if (!okKey(key)) {
-    show('nokey');
-  } else if (new URLSearchParams(location.search).has('setup') && !installed()) {
-    history.replaceState(null, '', location.pathname + location.hash);
-    if (APPLE) { document.getElementById('open').onclick = openApp; show('setup'); }
-    else {
-      document.getElementById('installBtn').onclick = async () => {
-        if (!offer) return;
-        offer.prompt(); const r = await offer.userChoice.catch(() => ({}));
-        offer = null; document.getElementById('installBtn').hidden = true;
-        if (r.outcome === 'accepted') { document.getElementById('steps').hidden = true; document.getElementById('done').hidden = false; }
-      };
-      document.getElementById('openA').onclick = openApp;
-      show('setupA');
-    }
-  } else {
-    openApp();
-  }
+  // 2026-10-14: the app moved to lazeeza-app.nauflow.com (the Node version on Hostinger, same sheets). Old Home Screen icons
+  // and links land here: forwarded there with the code this phone kept (it opens with the same PIN, asked once).
+  // Going back to the Apps Script version = revert this commit (the setup / openApp code above is still the old one).
+  location.replace('https://lazeeza-app.nauflow.com/' + (okKey(key) ? '#k=' + encodeURIComponent(key) : ''));
 </script>
 </body>
 </html>
